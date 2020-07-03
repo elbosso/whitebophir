@@ -1,17 +1,32 @@
-version: '3'
+version: "2"
 services:
-  www:
-    volumes:
-      - /opt/app/server-data:/opt/app/server-data
-    ports:
-      - '80:80'
+  wbo:
+#    image: lovasoa/wbo
     build:
-      context: .
-    restart: on-failure
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 5
-        window: 60s
+      context: ./ # Local
+      dockerfile: Dockerfile_armhf
+    container_name: wbo
+    hostname: wbo
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - MAXMEM=1024
+    volumes:
+      - ./wbo-boards:/opt/app/server-data
+#    ports:
+#      - 5001:80
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ubooquity.rule=Host(`wbo.pi-docker.lab`)"
+      - "traefik.http.services.ubooquity.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_proxy"
+    networks:
+      - default
+      - traefik_proxy
 
+networks:
+  traefik_proxy:
+    external:
+      name: pi_traefik_proxy
